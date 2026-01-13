@@ -1,0 +1,17 @@
+ Eclipse
+.classpath
+.project
+.settings/
+
+# Maven
+/target/
+
+# TestNG & reports
+/test-output/
+/screenshots/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
