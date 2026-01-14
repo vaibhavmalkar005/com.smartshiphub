@@ -15,7 +15,7 @@ public class ScreenshotUtils {
     public static void capture(String testName) {
         try {
             // Generate timestamp
-            String timestamp = new SimpleDateFormat("yyyy_MM_dd_HH:mm:ss").format(new Date());
+            String timestamp = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(new Date());
 
             TakesScreenshot ts = (TakesScreenshot) DriverFactory.getDriver();
             File src = ts.getScreenshotAs(OutputType.FILE);
