@@ -1,17 +1,8 @@
- Eclipse
-.classpath
-.project
-.settings/
-
-# Maven
-/target/
-
-# TestNG & reports
-/test-output/
-/screenshots/
-
-# Logs
-*.log
-
-# OS files
-.DS_Store
+# ========================= Eclipse IDE files =========================
+.classpath .project .settings/
+# ========================= Maven / Java build =========================
+target/ *.class
+# ========================= Test reports & output =========================
+test-output/ reports/ screenshots/ src/test/java/com/smartshiphub/reports/
+# ========================= Logs =========================
+log/ *.log

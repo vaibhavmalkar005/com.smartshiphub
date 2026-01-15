@@ -1,15 +1,15 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="SmartShip Automation Suite" verbose="1">
+<suite name="Automation Suite"
+       verbose="0"
+       disable-default-listeners="true">
 
-    <!-- Listeners -->
     <listeners>
-        <listener class-name="com.smartshiphub.listeners.TestListener"/>
+        <listener class-name="com.smartshiphub.listeners.CustomReporter"/>
     </listeners>
 
-    <!-- LOGIN TESTS -->
     <test name="Login Tests">
         <classes>
-            <class name="com.smartshiphub.tests.LoginTest"/>
+            <class name="com.smartshiphub.tests.login.LoginTest"/>
         </classes>
     </test>
 </suite>

@@ -21,5 +21,13 @@ public class WaitUtils {
         return new WebDriverWait(driver, Duration.ofSeconds(20))
                 .until(ExpectedConditions.elementToBeClickable(locator));
     }
+    
+    public boolean waitForUrlContains (String partialUrl) {
+    	try {
+    		return new WebDriverWait(driver, Duration.ofSeconds(20)).until(ExpectedConditions.urlContains(partialUrl));
+    	} catch (TimeoutException e) {
+    		return false;
+    	}
+    }
 }
 
