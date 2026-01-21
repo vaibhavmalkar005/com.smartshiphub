@@ -28,7 +28,7 @@ public class LoginPage {
     private WebElement loginBtn;
 
     private By errorMsg =
-            By.xpath("//div[contains(@class,'error')]");
+    	    By.cssSelector("div.cg-notify-message.alert-danger");
 
     private By hamburgerMenu =
             By.xpath("//i[contains(@class,'fa-bars')]");
@@ -49,6 +49,8 @@ public class LoginPage {
     }
 
     public String getErrorMessage() {
-        return wait.waitForVisible(errorMsg).getText().trim();
+        String actual = wait.waitForVisible(errorMsg).getText();
+        return actual.replace("×", "").replace("\n", "").trim();
     }
+
 }
