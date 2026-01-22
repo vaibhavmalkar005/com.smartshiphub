@@ -8,13 +8,25 @@ public class TestListener implements ITestListener {
 
     private static ExtentReports extent = ExtentManager.getInstance();
     private static ThreadLocal<ExtentTest> test = new ThreadLocal<>();
-
     @Override
     public void onTestStart(ITestResult result) {
-        // Only test case name (Excel column 1)
-        String testCaseName = result.getParameters()[0].toString();
-        test.set(extent.createTest(testCaseName));
+
+        String testName;
+
+        Object[] params = result.getParameters();
+
+        if (params != null && params.length > 0) {
+            // DataProvider-based test (LoginTest)
+            testName = params[0].toString();
+        } else {
+            // Normal test (VesselConnectivity)
+            testName = result.getMethod().getMethodName();
+        }
+
+        test.set(extent.createTest(testName));
     }
+
+
 
     @Override
     public void onTestSuccess(ITestResult result) {

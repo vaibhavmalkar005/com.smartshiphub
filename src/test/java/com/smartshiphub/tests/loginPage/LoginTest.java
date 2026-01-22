@@ -1,4 +1,4 @@
-package com.smartshiphub.tests.login;
+package com.smartshiphub.tests.loginPage;
 
 import org.testng.Assert;
 import org.testng.annotations.*;
