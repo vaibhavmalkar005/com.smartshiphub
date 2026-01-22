@@ -6,4 +6,3 @@ target/ *.class
 test-output/ reports/ screenshots/ src/test/java/com/smartshiphub/reports/
 # ========================= Logs =========================
 log/ *.log
-/target/
