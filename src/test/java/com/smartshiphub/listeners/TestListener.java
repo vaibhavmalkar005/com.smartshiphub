@@ -3,6 +3,7 @@ package com.smartshiphub.listeners;
 import org.testng.*;
 import com.aventstack.extentreports.*;
 import com.smartshiphub.reports.ExtentManager;
+import com.smartshiphub.utils.ScreenshotUtils;
 
 public class TestListener implements ITestListener {
 
@@ -35,6 +36,8 @@ public class TestListener implements ITestListener {
 
     @Override
     public void onTestFailure(ITestResult result) {
+    	String testName = test.get().getModel().getName();
+    	ScreenshotUtils.capture(testName);
         test.get().fail(result.getThrowable());
     }
 
