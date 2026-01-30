@@ -1,9 +1,8 @@
-# ========================= Eclipse IDE files =========================
-.classpath .project .settings/
-# ========================= Maven / Java build =========================
-target/ *.class
-# ========================= Test reports & output =========================
-test-output/ reports/ screenshots/ src/test/java/com/smartshiphub/reports/
-# ========================= Logs =========================
-log/ *.log
+# Maven
 /target/
+# TestNG / Automation outputs
+reports/ screenshots/ test-output/
+# Eclipse
+/.classpath /.project /.settings/
+# Office temp files
+.~lock.*

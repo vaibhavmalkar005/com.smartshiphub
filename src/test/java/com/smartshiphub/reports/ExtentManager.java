@@ -20,7 +20,7 @@ public class ExtentManager {
 
             ExtentSparkReporter spark =
                     new ExtentSparkReporter(
-                            "reports/Login_Automation_Report_" + TIMESTAMP + ".html"
+                            "reports/Automation Report" + TIMESTAMP + ".html"
                     );
 
             spark.config().setReportName("Login Automation Report");

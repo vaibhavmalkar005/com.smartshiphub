@@ -3,111 +3,76 @@ package com.smartshiphub.pages.DashboardPage;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.Point;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.*;
 
 import com.smartshiphub.utils.WaitUtils;
 
 public class DashboardPage {
 
-    private final WebDriver driver;
-    private final WaitUtils wait;
-    private final WebDriverWait explicitWait;
+    private WebDriver driver;
+    private WebDriverWait wait;
 
     public DashboardPage(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WaitUtils(driver);
-        this.explicitWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
         PageFactory.initElements(driver, this);
     }
 
-    // ---------- Dashboard Last Updated ----------
     @FindBy(xpath = "//div[contains(text(),'Last Updated')]//b")
     private WebElement lastUpdatedDateTime;
+
+    private By tooltipTime =
+            By.xpath("//div[contains(@class,'recharts-tooltip-wrapper')]//div[contains(text(),'Time')]");
+
+    private By graphArea =
+            By.xpath("//*[name()='g' and contains(@class,'recharts-reference-area')]");
 
     public String waitForLastUpdatedDateTime() {
 
         for (int i = 0; i < 15; i++) {
             String value = lastUpdatedDateTime.getText().trim();
-
-            if (!value.equalsIgnoreCase("NA")
-                    && !value.contains("NA")
-                    && !value.isEmpty()) {
+            if (!value.equalsIgnoreCase("NA") && !value.isEmpty()) {
                 return value;
             }
-            wait.sleep(1000);
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
         }
-
-        throw new RuntimeException("Last Updated time did not update from NA");
+        throw new RuntimeException("Last Updated time not refreshed");
     }
 
-    // ---------- Graph ----------
-    private final By referenceArea =
-            By.xpath("//*[name()='g' and contains(@class,'recharts-reference-area')]");
+    public String getTooltipTimeFromGraph() {
 
-   public String getTooltipTimeFromGraph() {
+        WebElement graph = wait.until(ExpectedConditions.presenceOfElementLocated(graphArea));
+        JavascriptExecutor js = (JavascriptExecutor) driver;
 
-    WebElement graph =
-            explicitWait.until(ExpectedConditions.presenceOfElementLocated(referenceArea));
+        Point loc = graph.getLocation();
+        Dimension size = graph.getSize();
 
-    JavascriptExecutor js = (JavascriptExecutor) driver;
-
-    // Activate graph
-    js.executeScript(
-            "arguments[0].dispatchEvent(new MouseEvent('click',{bubbles:true}))",
-            graph);
-
-    wait.sleep(2000);
-
-    Point location = graph.getLocation();
-    Dimension size = graph.getSize();
-
-    int hoverX = location.getX() + size.getWidth() - 2;
-    int hoverY = location.getY() + size.getHeight() / 2;
-
-    for (int i = 0; i < 6; i++) {
+        int x = loc.getX() + size.getWidth() - 2;
+        int y = loc.getY() + size.getHeight() / 2;
 
         js.executeScript(
-                "var evt=new MouseEvent('mousemove',{clientX:arguments[0],clientY:arguments[1],bubbles:true});"
-                        + "var el=document.elementFromPoint(arguments[0],arguments[1]);"
-                        + "if(el)el.dispatchEvent(evt);",
-                hoverX, hoverY);
+                "var e=new MouseEvent('mousemove',{clientX:arguments[0],clientY:arguments[1],bubbles:true});"
+                        + "document.elementFromPoint(arguments[0],arguments[1]).dispatchEvent(e);",
+                x, y);
 
-        wait.sleep(1500);
+        try {
+            WebElement tooltip =
+                    wait.until(ExpectedConditions.visibilityOfElementLocated(tooltipTime));
 
-        List<WebElement> tooltipTime =
-                driver.findElements(By.xpath(
-                        "//div[contains(@class,'recharts-tooltip-wrapper')]//div[contains(text(),'Time')]"));
+            return tooltip.getText().replace("Time :", "").trim();
 
-        if (!tooltipTime.isEmpty()) {
-            return tooltipTime.get(0)
-                    .getText()
-                    .replace("Time :", "")
-                    .trim();
+        } catch (TimeoutException e) {
+            return null; // OFFLINE
         }
     }
 
-    // ❗ Tooltip did not appear → treat as OFFLINE signal
-    System.out.println("Tooltip did not open or time not available");
-    return null;
-}
-
-
     public LocalDateTime parseTooltipTime(String tooltipTime) {
-
-        DateTimeFormatter formatter =
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        return LocalDateTime.parse(tooltipTime, formatter);
+        return LocalDateTime.parse(
+                tooltipTime,
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 }

@@ -1,16 +1,10 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="Automation Suite" verbose="2">
 
-    <test name="Login Tests">
-        <classes>
-            <class name="com.smartshiphub.tests.loginPage.LoginTest"/>
-        </classes>
-    </test>
-
-    <test name="Dashboard Vessel Connectivity Tests">
-        <classes>
-            <class name="com.smartshiphub.tests.dashboardPage.VesselConnectivity"/>
-        </classes>
+    <test name="All Tests">
+        <packages>
+            <package name="com.smartshiphub.tests.*"/>
+        </packages>
     </test>
 
 </suite>

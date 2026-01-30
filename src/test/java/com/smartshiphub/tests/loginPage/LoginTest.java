@@ -12,15 +12,15 @@ import com.smartshiphub.utils.ExcelUtils;
 @Listeners(TestListener.class)
 public class LoginTest extends BaseTest {
 
-    @DataProvider(name = "loginData")
-    public Object[][] getLoginData() throws Exception {
+    @DataProvider
+    public Object[][] loginData() {
         ConfigReader.initProperties();
         return ExcelUtils.getLoginData(
-                ConfigReader.get("excelPath"),
-                ConfigReader.get("ExcelSheetName"));
+            ConfigReader.get("excelPath"),
+            ConfigReader.get("ExcelSheetName"));
     }
 
-    @Test(dataProvider = "loginData")
+    @Test(dataProvider = "loginData", groups = {"sanity", "smoke", "regression"})
     public void verifyLoginScenarios(
             String testCase,
             String username,
@@ -35,9 +35,7 @@ public class LoginTest extends BaseTest {
             Assert.assertTrue(login.isLoginSuccessful());
         } else {
             Assert.assertTrue(login.isErrorDisplayed());
-            Assert.assertEquals(
-                    login.getErrorMessage(),
-                    expectedErrorMessage);
+            Assert.assertEquals(login.getErrorMessage(), expectedErrorMessage);
         }
     }
 }

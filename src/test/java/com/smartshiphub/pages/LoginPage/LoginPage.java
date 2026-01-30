@@ -9,12 +9,12 @@ import com.smartshiphub.utils.WaitUtils;
 
 public class LoginPage {
 
-    private WaitUtils wait;
     private ElementActions actions;
+    private WaitUtils wait;
 
     public LoginPage(WebDriver driver) {
-        this.wait = new WaitUtils(driver);
         this.actions = new ElementActions(driver);
+        this.wait = new WaitUtils(driver);
         PageFactory.initElements(driver, this);
     }
 
@@ -28,9 +28,9 @@ public class LoginPage {
     private WebElement loginBtn;
 
     private By errorMsg =
-    	    By.cssSelector("div.cg-notify-message.alert-danger");
+            By.cssSelector("div.cg-notify-message.alert-danger");
 
-    private By hamburgerMenu =
+    private By dashboardIndicator =
             By.xpath("//i[contains(@class,'fa-bars')]");
 
     public void login(String user, String pass) {
@@ -41,7 +41,7 @@ public class LoginPage {
 
     public boolean isLoginSuccessful() {
         return wait.waitForUrlContains("/DashboardHome")
-                && wait.waitForVisible(hamburgerMenu).isDisplayed();
+                && wait.waitForVisible(dashboardIndicator).isDisplayed();
     }
 
     public boolean isErrorDisplayed() {
@@ -49,8 +49,7 @@ public class LoginPage {
     }
 
     public String getErrorMessage() {
-        String actual = wait.waitForVisible(errorMsg).getText();
-        return actual.replace("×", "").replace("\n", "").trim();
+        return wait.waitForVisible(errorMsg).getText()
+                .replace("×", "").replace("\n", "").trim();
     }
-
 }

@@ -2,7 +2,9 @@ package com.smartshiphub.factory;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeDriver;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class DriverFactory {
@@ -13,7 +15,9 @@ public class DriverFactory {
 
         if ("chrome".equalsIgnoreCase(browser)) {
             WebDriverManager.chromedriver().setup();
-            driver.set(new ChromeDriver());
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--start-maximized");
+            driver.set(new ChromeDriver(options));
 
         } else if ("edge".equalsIgnoreCase(browser)) {
             WebDriverManager.edgedriver().setup();
@@ -22,8 +26,6 @@ public class DriverFactory {
         } else {
             throw new RuntimeException("Invalid browser: " + browser);
         }
-
-        getDriver().manage().window().maximize();
         return getDriver();
     }
 
