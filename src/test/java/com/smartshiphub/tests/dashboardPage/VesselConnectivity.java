@@ -20,71 +20,78 @@ import com.smartshiphub.utils.LoginHelper;
 public class VesselConnectivity extends BaseTest {
 
     @Test
-    public void verifyVesselConnectivityFromDashboard() throws Exception {
+    public void verifyVesselConnectivityFromDashboardAndGraph() throws Exception {
 
-        System.out.println("Vessel Connectivity Test Running");
-
-        // ------------------ Step 1: Login ------------------
+        // ---------- Login ----------
         ConfigReader.initProperties();
-
         LoginPage login = new LoginPage(driver);
         String[] creds = LoginHelper.getValidLoginFromExcel();
         login.login(creds[0], creds[1]);
 
+        Assert.assertTrue(login.isLoginSuccessful(),
+                "Login failed, dashboard not loaded");
 
-        Assert.assertTrue(
-                login.isLoginSuccessful(),
-                "Login failed, Dashboard not loaded");
-
-        // ------------------ Step 2: Dashboard Validation ------------------
+        // ---------- Dashboard Last Updated ----------
         DashboardPage dashboardPage = new DashboardPage(driver);
 
-        String lastUpdatedText = dashboardPage.waitForLastUpdatedDateTime();
+        String lastUpdatedText =
+                dashboardPage.waitForLastUpdatedDateTime();
 
-        Assert.assertNotNull(
-                lastUpdatedText,
-                "Last Updated time is not visible on Dashboard");
+        String cleanedDashboardTime =
+                lastUpdatedText.replaceFirst("^:\\s*", "");
 
-        Assert.assertFalse(
-                lastUpdatedText.equalsIgnoreCase("NA")
-                || lastUpdatedText.contains("NA"),
-                "Last Updated time is still NA after waiting"
-        );
+        DateTimeFormatter dashboardFormatter =
+                DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
-        System.out.println("Last Updated Time (UTC): " + lastUpdatedText);
+        LocalDateTime dashboardUTC =
+                LocalDateTime.parse(cleanedDashboardTime, dashboardFormatter);
 
-     // ------------------ Step 3: Time Comparison ------------------
+        System.out.println("Dashboard Last Updated (UTC): " + dashboardUTC);
 
-     // Remove only the leading colon and space (not time colons)
-     String cleanedDateTime = lastUpdatedText.replaceFirst("^:\\s*", "");
+        // ---------- Tooltip Time ----------
+        String tooltipTimeRaw =
+                dashboardPage.getTooltipTimeFromGraph();
 
-     System.out.println("Cleaned Last Updated Time: " + cleanedDateTime);
+        LocalDateTime tooltipUTC =
+                dashboardPage.parseTooltipTime(tooltipTimeRaw);
 
-     // UI format is dd-MM-yyyy HH:mm:ss
-     DateTimeFormatter formatter =
-             DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        System.out.println("Tooltip Time (UTC): " + tooltipUTC);
 
-     // Parse UI UTC time
-     LocalDateTime lastUpdatedUTC =
-             LocalDateTime.parse(cleanedDateTime, formatter);
+     // ---------- Time difference vs Current UTC ----------
+        LocalDateTime currentUTC = LocalDateTime.now(ZoneOffset.UTC);
 
-     LocalDateTime currentUTC =
-             LocalDateTime.now(ZoneOffset.UTC);
+        long dashboardDiffFromNow =
+                Duration.between(dashboardUTC, currentUTC).toMinutes();
 
-     long diffInMinutes =
-             Duration.between(lastUpdatedUTC, currentUTC).toMinutes();
+        long tooltipDiffFromNow =
+                Duration.between(tooltipUTC, currentUTC).toMinutes();
 
-        // ------------------ Step 4: Connectivity Status ------------------
-        if (diffInMinutes > 60) {
-            System.out.println("❌ Vessel is OFFLINE");
-            Assert.assertTrue(
-                    diffInMinutes > 60,
-                    "Vessel marked OFFLINE (last update > 1 hour)");
+        int thresholdMinutes =
+                ConfigReader.getVesselOnlineThresholdMinutes();
+
+        System.out.println("Configured online threshold: "
+                + thresholdMinutes + " minutes");
+
+        System.out.println("Dashboard Last Updated vs Current UTC: "
+                + dashboardDiffFromNow + " minutes");
+
+        System.out.println("Tooltip Time vs Current UTC: "
+                + tooltipDiffFromNow + " minutes");
+
+        // ---------- Vessel Connectivity Decision ----------
+        boolean isDashboardFresh = dashboardDiffFromNow <= thresholdMinutes;
+        boolean isTooltipFresh = tooltipDiffFromNow <= thresholdMinutes;
+
+        if (isDashboardFresh && isTooltipFresh) {
+            System.out.println("Vessel Status: ONLINE");
         } else {
-            System.out.println("✅ Vessel is ONLINE");
-            Assert.assertTrue(
-                    diffInMinutes <= 60,
-                    "Vessel marked ONLINE (last update within 1 hour)");
+            System.out.println("Vessel Status: OFFLINE");
         }
+
+        // ---------- Final Assertion ----------
+        Assert.assertTrue(
+                isDashboardFresh && isTooltipFresh,
+                "Vessel is OFFLINE: dashboard or tooltip data older than "
+                        + thresholdMinutes + " minutes");
     }
 }
