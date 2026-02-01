@@ -6,11 +6,13 @@ import org.openqa.selenium.support.ui.*;
 
 public class WaitUtils {
 
-    WebDriver driver;
+    private WebDriver driver;
 
     public WaitUtils(WebDriver driver) {
         this.driver = driver;
     }
+
+    /* ========= WAIT FOR By ========= */
 
     public WebElement waitForVisible(By locator) {
         return new WebDriverWait(driver, Duration.ofSeconds(20))
@@ -21,14 +23,30 @@ public class WaitUtils {
         return new WebDriverWait(driver, Duration.ofSeconds(20))
                 .until(ExpectedConditions.elementToBeClickable(locator));
     }
-    
-    public boolean waitForUrlContains (String partialUrl) {
-    	try {
-    		return new WebDriverWait(driver, Duration.ofSeconds(20)).until(ExpectedConditions.urlContains(partialUrl));
-    	} catch (TimeoutException e) {
-    		return false;
-    	}
+
+    /* ========= WAIT FOR WebElement (NEW) ========= */
+
+    public WebElement waitForVisible(WebElement element) {
+        return new WebDriverWait(driver, Duration.ofSeconds(20))
+                .until(ExpectedConditions.visibilityOf(element));
     }
+
+    public WebElement waitForClickable(WebElement element) {
+        return new WebDriverWait(driver, Duration.ofSeconds(20))
+                .until(ExpectedConditions.elementToBeClickable(element));
+    }
+
+    /* ========= URL ========= */
+
+    public boolean waitForUrlContains(String partialUrl) {
+        try {
+            return new WebDriverWait(driver, Duration.ofSeconds(20))
+                    .until(ExpectedConditions.urlContains(partialUrl));
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
     public void sleep(long millis) {
         try {
             Thread.sleep(millis);
@@ -38,4 +56,3 @@ public class WaitUtils {
         }
     }
 }
-

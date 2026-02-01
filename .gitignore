@@ -1,8 +1,13 @@
 # Maven
 /target/
 # TestNG / Automation outputs
-reports/ screenshots/ test-output/
+/reports/
+/screenshots/
+/test-output/
 # Eclipse
-/.classpath /.project /.settings/
-# Office temp files
+/.classpath
+/.project
+/.settings/
+# Logs & temp
+*.log
 .~lock.*

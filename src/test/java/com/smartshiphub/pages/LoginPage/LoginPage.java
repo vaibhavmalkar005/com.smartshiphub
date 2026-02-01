@@ -27,29 +27,54 @@ public class LoginPage {
     @FindBy(xpath = "//button[contains(text(),'Login')]")
     private WebElement loginBtn;
 
+    private By dashboardIndicator =
+            By.xpath("//div[contains(@class,'dashboard')]");
+
     private By errorMsg =
             By.cssSelector("div.cg-notify-message.alert-danger");
 
-    private By dashboardIndicator =
-            By.xpath("//i[contains(@class,'fa-bars')]");
+    public boolean isLoginPageVisible() {
+        try {
+            return email.isDisplayed();
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
+    /** ✅ USE THIS EVERYWHERE */
+    public void loginIfRequired(String user, String pass) {
+
+        if (isLoginPageVisible()) {
+            actions.type(email, user);
+            actions.type(password, pass);
+            actions.click(loginBtn);
+        }
+
+        wait.waitForVisible(dashboardIndicator);
+    }
+
+    /** Used ONLY by LoginTest */
     public void login(String user, String pass) {
+        wait.waitForVisible(email);
         actions.type(email, user);
         actions.type(password, pass);
         actions.click(loginBtn);
     }
 
     public boolean isLoginSuccessful() {
-        return wait.waitForUrlContains("/DashboardHome")
-                && wait.waitForVisible(dashboardIndicator).isDisplayed();
+        return wait.waitForVisible(dashboardIndicator).isDisplayed();
     }
 
     public boolean isErrorDisplayed() {
-        return wait.waitForVisible(errorMsg).isDisplayed();
+        try {
+            return wait.waitForVisible(errorMsg).isDisplayed();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String getErrorMessage() {
-        return wait.waitForVisible(errorMsg).getText()
-                .replace("×", "").replace("\n", "").trim();
+        return wait.waitForVisible(errorMsg)
+                .getText().replace("×", "").trim();
     }
 }

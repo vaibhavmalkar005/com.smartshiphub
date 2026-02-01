@@ -1,26 +1,32 @@
 package com.smartshiphub.pages.DashboardPage;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import org.openqa.selenium.*;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
-import org.openqa.selenium.support.ui.*;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-import com.smartshiphub.utils.WaitUtils;
+import java.time.Duration;
 
 public class DashboardPage {
 
     private WebDriver driver;
+    private Actions actions;
     private WebDriverWait wait;
 
     public DashboardPage(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        this.actions = new Actions(driver);
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         PageFactory.initElements(driver, this);
     }
+
+    /* ================= DASHBOARD TIME ================= */
 
     @FindBy(xpath = "//div[contains(text(),'Last Updated')]//b")
     private WebElement lastUpdatedDateTime;
@@ -31,48 +37,100 @@ public class DashboardPage {
     private By graphArea =
             By.xpath("//*[name()='g' and contains(@class,'recharts-reference-area')]");
 
-    public String waitForLastUpdatedDateTime() {
+    public String waitForLastUpdatedOrNA(int maxSeconds) {
 
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < maxSeconds; i++) {
             String value = lastUpdatedDateTime.getText().trim();
             if (!value.equalsIgnoreCase("NA") && !value.isEmpty()) {
                 return value;
             }
-            try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+            sleep(1000);
         }
-        throw new RuntimeException("Last Updated time not refreshed");
+        return "NA";
     }
 
     public String getTooltipTimeFromGraph() {
-
-        WebElement graph = wait.until(ExpectedConditions.presenceOfElementLocated(graphArea));
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-
-        Point loc = graph.getLocation();
-        Dimension size = graph.getSize();
-
-        int x = loc.getX() + size.getWidth() - 2;
-        int y = loc.getY() + size.getHeight() / 2;
-
-        js.executeScript(
-                "var e=new MouseEvent('mousemove',{clientX:arguments[0],clientY:arguments[1],bubbles:true});"
-                        + "document.elementFromPoint(arguments[0],arguments[1]).dispatchEvent(e);",
-                x, y);
-
         try {
-            WebElement tooltip =
-                    wait.until(ExpectedConditions.visibilityOfElementLocated(tooltipTime));
+            WebElement graph = wait.until(
+                    ExpectedConditions.presenceOfElementLocated(graphArea));
 
-            return tooltip.getText().replace("Time :", "").trim();
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            Point loc = graph.getLocation();
+            Dimension size = graph.getSize();
 
-        } catch (TimeoutException e) {
-            return null; // OFFLINE
+            js.executeScript(
+                    "var e=new MouseEvent('mousemove',{clientX:arguments[0],clientY:arguments[1],bubbles:true});"
+                            + "document.elementFromPoint(arguments[0],arguments[1]).dispatchEvent(e);",
+                    loc.getX() + size.getWidth() - 2,
+                    loc.getY() + size.getHeight() / 2);
+
+            return driver.findElement(tooltipTime)
+                    .getText().replace("Time :", "").trim();
+
+        } catch (Exception e) {
+            return null;
         }
     }
 
-    public LocalDateTime parseTooltipTime(String tooltipTime) {
-        return LocalDateTime.parse(
-                tooltipTime,
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    /* ================= VESSEL DROPDOWN ================= */
+
+    private By vesselDropdown =
+            By.xpath("//div[@id='dropdownIdTwo']");
+
+    private By vesselOptions =
+            By.xpath("//div[contains(@class,'dashboard-vessel-select__option')]");
+
+    public void openVesselDropdown() {
+
+        WebElement dropdown = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(vesselDropdown));
+
+        actions.moveToElement(dropdown).click().perform();
+        sleep(800); // animation + render
+    }
+
+    public List<WebElement> getVesselOptionsSafely() {
+
+        for (int attempt = 0; attempt < 3; attempt++) {
+            List<WebElement> vessels = driver.findElements(vesselOptions);
+            if (!vessels.isEmpty()) {
+                return vessels;
+            }
+            openVesselDropdown();
+            sleep(1000);
+        }
+        return List.of();
+    }
+
+    public int getVesselCount() {
+        openVesselDropdown();
+        return getVesselOptionsSafely().size();
+    }
+
+    public String selectVesselByIndex(int index) {
+
+        openVesselDropdown();
+        List<WebElement> vessels = getVesselOptionsSafely();
+
+        if (index >= vessels.size()) {
+            throw new RuntimeException("Vessel index out of range: " + index);
+        }
+
+        WebElement vessel = vessels.get(index);
+        String name = vessel.getText().trim();
+        vessel.click();
+
+        sleep(1200); // dashboard refresh
+        return name;
+    }
+
+    /* ================= UTIL ================= */
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

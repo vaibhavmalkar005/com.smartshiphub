@@ -20,11 +20,11 @@ public class ExtentManager {
 
             ExtentSparkReporter spark =
                     new ExtentSparkReporter(
-                            "reports/Automation Report" + TIMESTAMP + ".html"
+                            "reports/Automation Report " + TIMESTAMP + ".html"
                     );
 
-            spark.config().setReportName("Login Automation Report");
-            spark.config().setDocumentTitle("SmartShip Test Report");
+            spark.config().setReportName("Automation Report");
+            spark.config().setDocumentTitle("SmartShip QA Automation Report");
 
             extent = new ExtentReports();
             extent.attachReporter(spark);
