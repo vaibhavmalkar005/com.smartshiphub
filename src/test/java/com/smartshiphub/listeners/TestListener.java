@@ -22,16 +22,26 @@ public class TestListener implements ITestListener {
         } else {
             testName = result.getMethod().getMethodName();
         }
-        test.set(extent.createTest(testName));
+
+        ExtentTest extentTest = extent.createTest(testName);
+        test.set(extentTest);
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        test.get().pass("Test Passed");
+        if (test.get() != null) {
+            test.get().pass("Test Passed");
+        }
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
+
+        // 🔥 SAFETY CHECK (MOST IMPORTANT)
+        if (test.get() == null) {
+            return;
+        }
+
         String testName = test.get().getModel().getName();
         String screenshotPath = ScreenshotUtils.capture(testName);
 
@@ -47,7 +57,16 @@ public class TestListener implements ITestListener {
     }
 
     @Override
+    public void onTestSkipped(ITestResult result) {
+        if (test.get() != null) {
+            test.get().skip("Test Skipped");
+        }
+    }
+
+    @Override
     public void onFinish(ITestContext context) {
-        extent.flush();
+        if (extent != null) {
+            extent.flush();
+        }
     }
 }
