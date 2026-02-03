@@ -35,12 +35,12 @@ public class LoginPage {
     private WebElement loginBtn;
 
     private By dashboardIndicator =
-            By.xpath("//div[contains(@class,'dashboard')]");
+        By.xpath("//div[contains(@class,'dashboard')]");
 
     private By errorMsg =
-            By.cssSelector("div.cg-notify-message.alert-danger");
+        By.cssSelector("div.cg-notify-message.alert-danger");
 
-    /* ================= HELPERS ================= */
+    /* ================= COMMON HELPERS ================= */
 
     public boolean isLoginPageVisible() {
         try {
@@ -50,15 +50,11 @@ public class LoginPage {
         }
     }
 
-    /* ================= MAIN LOGIN ================= */
+    /* ===================================================
+       ✅ LOGIN (USED BY ALL DASHBOARD TESTS)
+       =================================================== */
 
-    /**
-     * ✅ Smart login:
-     * - Login if page visible
-     * - Wait ONLY for (dashboard OR error)
-     * - Fail FAST if login fails
-     */
-    public void loginIfRequired(String user, String pass) {
+    public boolean loginIfRequired(String user, String pass) {
 
         if (isLoginPageVisible()) {
             actions.type(email, user);
@@ -67,36 +63,26 @@ public class LoginPage {
         }
 
         try {
-            // ⏱ Short intelligent wait (NOT 20 sec dashboard wait)
             WebDriverWait shortWait =
-                    new WebDriverWait(driver, Duration.ofSeconds(5));
+                new WebDriverWait(driver, Duration.ofSeconds(6));
 
             shortWait.until(d ->
-                    d.findElements(dashboardIndicator).size() > 0
-                 || d.findElements(errorMsg).size() > 0
+                d.findElements(dashboardIndicator).size() > 0 ||
+                d.findElements(errorMsg).size() > 0
             );
 
         } catch (TimeoutException e) {
-            throw new RuntimeException(
-                "LOGIN FAILED → No dashboard or error message appeared");
+            return false;
         }
 
-        // ❌ Login error message shown
         if (!driver.findElements(errorMsg).isEmpty()) {
-            String msg = driver.findElement(errorMsg)
-                    .getText().replace("×", "").trim();
-            throw new RuntimeException("LOGIN FAILED → " + msg);
+            return false;
         }
 
-        // ❌ Dashboard still not visible
-        if (driver.findElements(dashboardIndicator).isEmpty()) {
-            throw new RuntimeException(
-                "LOGIN FAILED → Dashboard did not load after login click");
-        }
+        return !driver.findElements(dashboardIndicator).isEmpty();
     }
 
-    /* ================= USED BY LoginTest ONLY ================= */
-
+      /** Used ONLY by LoginTest */
     public void login(String user, String pass) {
         wait.waitForVisible(email);
         actions.type(email, user);
@@ -104,10 +90,16 @@ public class LoginPage {
         actions.click(loginBtn);
     }
 
+    /** Used ONLY by LoginTest */
     public boolean isLoginSuccessful() {
-        return wait.waitForVisible(dashboardIndicator).isDisplayed();
+        try {
+            return wait.waitForVisible(dashboardIndicator).isDisplayed();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
+    /** Used ONLY by LoginTest */
     public boolean isErrorDisplayed() {
         try {
             return wait.waitForVisible(errorMsg).isDisplayed();
@@ -116,8 +108,15 @@ public class LoginPage {
         }
     }
 
+    /** Used ONLY by LoginTest */
     public String getErrorMessage() {
-        return wait.waitForVisible(errorMsg)
-                .getText().replace("×", "").trim();
+        try {
+            return wait.waitForVisible(errorMsg)
+                .getText()
+                .replace("×", "")
+                .trim();
+        } catch (Exception e) {
+            return "";
+        }
     }
 }

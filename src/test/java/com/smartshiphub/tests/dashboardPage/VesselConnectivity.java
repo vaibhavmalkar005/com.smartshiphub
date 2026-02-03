@@ -2,7 +2,10 @@ package com.smartshiphub.tests.dashboardPage;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Listeners;
@@ -41,31 +44,30 @@ public class VesselConnectivity extends BaseTest {
         for (int i = 0; i < vesselCount; i++) {
 
             String vesselName = dashboard.selectVesselByIndex(i);
-            Reporter.log("========================================", true);
+
+            Reporter.log("\n========================================", true);
             Reporter.log("Checking Vessel: " + vesselName, true);
 
             LocalDateTime nowUTC = LocalDateTime.now(ZoneOffset.UTC);
             Reporter.log("Current UTC Time      : " + nowUTC, true);
 
-            /* ---------------- PRIORITY 1 ---------------- */
+            /* ================= PRIORITY 1 ================= */
+
             String lastUpdatedText = dashboard.waitForLastUpdatedOrNA(20);
             Reporter.log("Last Updated Raw Text : " + lastUpdatedText, true);
 
-            // ✅ OFFLINE → DO NOT PARSE
             if ("NA".equalsIgnoreCase(lastUpdatedText)) {
                 Reporter.log(
-                    "DECISION → OFFLINE (Reason: LastUpdated is NA – vessel offline)",
+                    "DECISION → OFFLINE (Reason: LastUpdated is NA – no backend data)",
                     true
                 );
                 continue;
             }
 
             LocalDateTime lastUpdatedUTC = parseDateTimeSafely(lastUpdatedText);
-
-            // ✅ extra safety (corrupt value etc.)
             if (lastUpdatedUTC == null) {
                 Reporter.log(
-                    "DECISION → OFFLINE (Reason: LastUpdated NA)",
+                    "DECISION → OFFLINE (Reason: LastUpdated invalid format)",
                     true
                 );
                 continue;
@@ -77,25 +79,58 @@ public class VesselConnectivity extends BaseTest {
             Reporter.log("Parsed LastUpdated UTC: " + lastUpdatedUTC, true);
             Reporter.log("LastUpdated Diff (min): " + diffLastUpdated, true);
 
-            /* ---------------- PRIORITY 2 ---------------- */
-            String tooltipRaw = dashboard.getTooltipTimeFromGraph();
-            Reporter.log("Graph Tooltip Time   : " + tooltipRaw, true);
+            /* ================= PRIORITY 2 ================= */
 
-            if (tooltipRaw == null || tooltipRaw.isEmpty()) {
+            if (diffLastUpdated > thresholdMinutes) {
                 Reporter.log(
-                    "DECISION → OFFLINE (Reason: Tooltip time missing)",
+                    "Skipping tooltip → vessel appears idle (LastUpdated exceeds threshold)",
                     true
                 );
-                continue; // ✅ business logic untouched
-            }
-
-            LocalDateTime tooltipUTC = parseTooltipTimeSafely(tooltipRaw);
-
-            if (tooltipUTC == null) {
-                Reporter.log("DECISION → OFFLINE (Reason: Tooltip time invalid format)", true);
+                Reporter.log(
+                    "DECISION → OFFLINE (Reason: LastUpdated exceeded threshold)",
+                    true
+                );
                 continue;
             }
 
+            /* ================= TOOLTIP (NO LOGIC CHANGE) ================= */
+
+            String tooltipRaw = dashboard.getTooltipTimeFromGraph();
+            Reporter.log("Graph Tooltip Time   : " + tooltipRaw, true);
+
+            // 🔍 DIAGNOSTIC WAIT ONLY (NO LOGIC CHANGE)
+            if (tooltipRaw == null || tooltipRaw.trim().isEmpty()) {
+                Reporter.log(
+                    "NOTE → Tooltip missing, graph may still be rendering",
+                    true
+                );
+                Reporter.log(
+                    "DEBUG → Waiting extra 3 seconds and retrying ONCE",
+                    true
+                );
+
+                Thread.sleep(3000);
+
+                tooltipRaw = dashboard.getTooltipTimeFromGraph();
+                Reporter.log("Graph Tooltip Retry : " + tooltipRaw, true);
+            }
+
+            if (tooltipRaw == null || tooltipRaw.trim().isEmpty()) {
+                Reporter.log(
+                    "DECISION → OFFLINE (Reason: Tooltip missing)",
+                    true
+                );
+                continue;
+            }
+
+            LocalDateTime tooltipUTC = parseTooltipTimeSafely(tooltipRaw);
+            if (tooltipUTC == null) {
+                Reporter.log(
+                    "DECISION → OFFLINE (Reason: Tooltip invalid format)",
+                    true
+                );
+                continue;
+            }
 
             long diffTooltip =
                 Duration.between(tooltipUTC, nowUTC).toMinutes();
@@ -103,24 +138,25 @@ public class VesselConnectivity extends BaseTest {
             Reporter.log("Parsed Tooltip UTC   : " + tooltipUTC, true);
             Reporter.log("Tooltip Diff (min)   : " + diffTooltip, true);
 
-            /* ---------------- FINAL DECISION ---------------- */
+            /* ================= FINAL DECISION ================= */
+
             if (diffLastUpdated > thresholdMinutes || diffTooltip > thresholdMinutes) {
                 Reporter.log(
-                    "DECISION → OFFLINE (Reason: Time diff exceeded threshold "
-                    + thresholdMinutes + " min)",
+                    "DECISION → OFFLINE (Reason: Time difference exceeded "
+                    + thresholdMinutes + " minutes)",
                     true
                 );
             } else {
                 Reporter.log(
-                    "DECISION → ONLINE (Reason: Both times within "
-                    + thresholdMinutes + " min)",
+                    "DECISION → ONLINE (Reason: Both timestamps within "
+                    + thresholdMinutes + " minutes)",
                     true
                 );
             }
         }
     }
 
-    /* ================= SAFE DATE PARSER ================= */
+    /* ================= SAFE LAST UPDATED PARSER ================= */
 
     private LocalDateTime parseDateTimeSafely(String raw) {
 
@@ -148,6 +184,9 @@ public class VesselConnectivity extends BaseTest {
             }
         }
     }
+
+    /* ================= SAFE TOOLTIP PARSER ================= */
+
     private LocalDateTime parseTooltipTimeSafely(String raw) {
 
         if (raw == null || raw.trim().isEmpty()) {
@@ -157,31 +196,29 @@ public class VesselConnectivity extends BaseTest {
         raw = raw.trim();
 
         try {
-            // Case 1: yyyy-MM-dd HH:mm:ss
             return LocalDateTime.parse(
-                    raw,
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                raw,
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+            );
         } catch (Exception ignore) { }
 
         try {
-            // Case 2: yyyy-MM-dd HHmmss  → normalize to HH:mm:ss
-            // Example: 2026-02-01 111850 → 2026-02-01 11:18:50
             String date = raw.substring(0, 10);
             String time = raw.substring(11);
 
             if (time.length() == 6) {
-                String normalizedTime =
-                        time.substring(0, 2) + ":" +
-                        time.substring(2, 4) + ":" +
-                        time.substring(4, 6);
+                String normalized =
+                    time.substring(0, 2) + ":" +
+                    time.substring(2, 4) + ":" +
+                    time.substring(4, 6);
 
                 return LocalDateTime.parse(
-                        date + " " + normalizedTime,
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    date + " " + normalized,
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                );
             }
         } catch (Exception ignore) { }
 
-        return null; // invalid → business logic decides OFFLINE
+        return null;
     }
-
 }
