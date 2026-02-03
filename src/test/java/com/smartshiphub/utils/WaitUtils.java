@@ -24,7 +24,7 @@ public class WaitUtils {
                 .until(ExpectedConditions.elementToBeClickable(locator));
     }
 
-    /* ========= WAIT FOR WebElement (NEW) ========= */
+    /* ========= WAIT FOR WebElement ========= */
 
     public WebElement waitForVisible(WebElement element) {
         return new WebDriverWait(driver, Duration.ofSeconds(20))

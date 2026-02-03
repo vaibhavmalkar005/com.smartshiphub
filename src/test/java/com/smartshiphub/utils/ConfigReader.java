@@ -23,7 +23,7 @@ public class ConfigReader {
 
     public static String get(String key) {
         if (prop == null) {
-            initProperties(); // 🔥 SAFETY NET
+            initProperties();
         }
         return prop.getProperty(key);
     }
