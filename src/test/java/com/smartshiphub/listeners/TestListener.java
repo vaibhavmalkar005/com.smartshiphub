@@ -11,27 +11,50 @@ public class TestListener implements ITestListener {
     private static ExtentReports extent = ExtentManager.getInstance();
     private static ThreadLocal<ExtentTest> test = new ThreadLocal<>();
 
+    private boolean isVesselConnectivityTest(ITestResult result) {
+        return result.getTestClass()
+                     .getName()
+                     .contains("VesselConnectivity");
+    }
+
     @Override
     public void onTestStart(ITestResult result) {
+
+        // 🚫 SKIP vessel connectivity for automation report
+        if (isVesselConnectivityTest(result)) {
+            return;
+        }
 
         String testName;
         Object[] params = result.getParameters();
 
         if (params != null && params.length > 0) {
-            testName = params[0].toString();
+            testName = result.getMethod().getMethodName()
+                       + " - " + params[0];
         } else {
             testName = result.getMethod().getMethodName();
         }
+
         test.set(extent.createTest(testName));
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
+
+        if (isVesselConnectivityTest(result)) {
+            return;
+        }
+
         test.get().pass("Test Passed");
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
+
+        if (isVesselConnectivityTest(result)) {
+            return;
+        }
+
         String testName = test.get().getModel().getName();
         String screenshotPath = ScreenshotUtils.capture(testName);
 

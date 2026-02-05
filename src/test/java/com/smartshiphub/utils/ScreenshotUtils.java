@@ -1,10 +1,13 @@
 package com.smartshiphub.utils;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.openqa.selenium.*;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 
 import com.smartshiphub.factory.DriverFactory;
 
@@ -24,8 +27,9 @@ public class ScreenshotUtils {
 
             File dest = new File(path);
             dest.getParentFile().mkdirs();
-            src.renameTo(dest);
-
+           // src.renameTo(dest);
+            Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            //
             return path;
         } catch (Exception e) {
             return null;

@@ -1,13 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 
-<suite name="Automation Suite" verbose="2">
-
+<suite name="Automation Suite" verbose="2" parallel="tests" thread-count="3">
+ <listeners>
+      
+        <listener class-name="com.smartshiphub.listeners.VesselSummarySuiteListener"/>
+    </listeners>
     <parameter name="environment" value="PROD"/>
 
-    <test name="All Tests">
+    <test name="Vessel Connectivity Tests">
         <packages>
-            <package name="com.smartshiphub.tests.*"/>
+            <package name="com.smartshiphub.tests.dashboardPage"/>
         </packages>
     </test>
+
 
 </suite>

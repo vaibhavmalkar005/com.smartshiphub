@@ -10,6 +10,7 @@ public class ExtentManager {
 
     private static ExtentReports extent;
 
+    
     private static final String TIMESTAMP =
             new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(new Date());
 
