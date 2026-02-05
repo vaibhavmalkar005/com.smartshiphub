@@ -7,6 +7,7 @@ import org.testng.annotations.BeforeMethod;
 
 import com.smartshiphub.factory.DriverFactory;
 import com.smartshiphub.utils.ConfigReader;
+import com.smartshiphub.utils.EnvironmentUtil;
 
 public class BaseTest {
 
@@ -17,15 +18,15 @@ public class BaseTest {
     public void setup() {
         prop = ConfigReader.initProperties();
         driver = DriverFactory.initDriver(prop.getProperty("browser"));
-        driver.get(prop.getProperty("url"));
+        //driver.get(prop.getProperty("url"));
     }
 
     protected void launchApplication(String instance) {
         String environment = System.getProperty("environment", "PROD");
-        String url = "https://www.smartshipweb.com/" + instance + "/#/UserLogin";
-        System.out.println("Launching URL: " + url);
+        String url = EnvironmentUtil.buildLoginUrl(environment, instance);
         driver.get(url);
     }
+
 
     @AfterMethod(alwaysRun = true)
     public void tearDown() {
