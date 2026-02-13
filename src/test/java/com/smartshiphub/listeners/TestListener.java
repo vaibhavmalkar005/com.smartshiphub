@@ -49,25 +49,29 @@ public class TestListener implements ITestListener {
     }
 
     @Override
-    public void onTestFailure(ITestResult result) {
+public void onTestFailure(ITestResult result) {
 
-        if (isVesselConnectivityTest(result)) {
-            return;
-        }
+    if (isVesselConnectivityTest(result)) {
+        return;
+    }
 
-        String testName = test.get().getModel().getName();
-        String screenshotPath = ScreenshotUtils.capture(testName);
+    String testName = test.get().getModel().getName();
 
-        test.get().fail(result.getThrowable());
+    /* ================= MODIFIED: Better Screenshot Naming ================= */
+    String screenshotPath =
+            ScreenshotUtils.capture(
+                testName.replaceAll("[^a-zA-Z0-9]", "_"));
 
-        if (screenshotPath != null) {
-            try {
-                test.get().addScreenCaptureFromPath(screenshotPath);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    test.get().fail(result.getThrowable());
+
+    if (screenshotPath != null) {
+        try {
+            test.get().addScreenCaptureFromPath(screenshotPath);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+}
 
     @Override
     public void onFinish(ITestContext context) {

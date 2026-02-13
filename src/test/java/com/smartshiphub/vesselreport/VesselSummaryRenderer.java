@@ -6,71 +6,92 @@ import com.aventstack.extentreports.markuputils.MarkupHelper;
 
 public class VesselSummaryRenderer {
 
-	/* 🔒 GUARD: ensure summary renders ONLY ONCE */
-	private static boolean summaryRendered = false;
+    private static boolean summaryRendered = false;
 
-	public static synchronized void render(ExtentReports extent) {
+    public static synchronized void render(ExtentReports extent) {
 
-		if (summaryRendered) {
-			return;
-		}
-		summaryRendered = true;
+        if (summaryRendered) return;
+        summaryRendered = true;
 
-		ExtentTest summary = extent.createTest("📊 FINAL Vessel Connectivity Summary");
+        ExtentTest summary =
+            extent.createTest("📊 FINAL Vessel Connectivity Summary");
 
-		List<VesselStatus> all = VesselReportStore.getAll();
+        List<VesselStatus> all =
+            VesselReportStore.getAll();
 
-		if (all.isEmpty()) {
-			summary.warning("No vessel data collected");
-			return;
-		}
+        if (all.isEmpty()) {
+            summary.warning("No vessel data collected");
+            return;
+        }
 
-		long online = all.stream().filter(v -> v.online).count();
-		long offline = all.size() - online;
+        long online =
+            all.stream().filter(v -> v.online).count();
 
-		/* ================= OVERALL STATUS ================= */
+        long offline =
+            all.size() - online;
 
-		String overallStatus = offline == 0 ? "🟢 HEALTHY" : offline <= 5 ? "🟠 DEGRADED" : "🔴 CRITICAL";
+        String overallStatus =
+            offline == 0 ? "🟢 HEALTHY"
+            : offline <= 5 ? "🟠 DEGRADED"
+            : "🔴 CRITICAL";
 
-		summary.info("Overall Status : " + overallStatus);
-		summary.info("Total Vessels  : " + all.size());
-		summary.pass("Online Vessels : " + online);
-		summary.fail("Offline Vessels: " + offline);
+        summary.info("Overall Status : " + overallStatus);
+        summary.info("Total Vessels  : " + all.size());
+        summary.pass("Online Vessels : " + online);
+        summary.fail("Offline Vessels: " + offline);
 
-		/* ================= INSTANCE HEALTH TABLE ================= */
+        /* ================= TABLE ================= */
 
-		StringBuilder table = new StringBuilder();
-		table.append("<table style='border-collapse:collapse;width:70%;" + "font-size:14px;color:#000;"
-				+ "background:#ffffff;' border='1'>")
+        StringBuilder table = new StringBuilder();
 
-				.append("<tr style='background:#0d6efd;color:white;text-align:center'>")
-				.append("<tr style='background:#f9f9f9;text-align:center'>").append("<th>Instance</th>")
-				.append("<th>Total</th>").append("<th>Online</th>").append("<th>Offline</th>").append("</tr>");
+        table.append("<table style='border-collapse:collapse;width:70%;"
+                + "font-size:14px;color:#000;background:#ffffff;' border='1'>");
 
-		Map<String, List<VesselStatus>> byInstance = VesselReportStore.byInstance();
+        table.append("<tr style='background:#0d6efd;color:white;text-align:center'>")
+                .append("<th>Instance</th>")
+                .append("<th>Total</th>")
+                .append("<th>Online</th>")
+                .append("<th>Offline</th>")
+                .append("</tr>");
 
-		for (Map.Entry<String, List<VesselStatus>> entry : byInstance.entrySet()) {
+        Map<String, List<VesselStatus>> byInstance =
+                VesselReportStore.byInstance();
 
-			String instance = entry.getKey();
-			List<VesselStatus> vessels = entry.getValue();
+        for (Map.Entry<String, List<VesselStatus>> entry :
+                byInstance.entrySet()) {
 
-			long instOnline = vessels.stream().filter(v -> v.online).count();
-			long instOffline = vessels.size() - instOnline;
+            String instance = entry.getKey();
+            List<VesselStatus> vessels = entry.getValue();
 
-			table.append("<tr>").append("<td>").append(instance).append("</td>").append("<td>").append(vessels.size())
-					.append("</td>").append("<td style='color:green'>").append(instOnline).append("</td>")
-					.append("<td style='color:red'>").append(instOffline).append("</td>").append("</tr>");
-		}
+            long instOnline =
+                vessels.stream().filter(v -> v.online).count();
 
-		table.append("</table>");
+            long instOffline =
+                vessels.size() - instOnline;
 
-		summary.info(MarkupHelper.createLabel(table.toString(), null));
+            table.append("<tr style='text-align:center'>")
+                    .append("<td>").append(instance).append("</td>")
+                    .append("<td>").append(vessels.size()).append("</td>")
+                    .append("<td style='color:green'>").append(instOnline).append("</td>")
+                    .append("<td style='color:red'>").append(instOffline).append("</td>")
+                    .append("</tr>");
+        }
 
-		/* ================= OFFLINE DETAILS (INSTANCE + VESSEL) ================= */
+        table.append("</table>");
 
-		ExtentTest offlineNode = summary.createNode("❌ Offline Vessel Details");
+        summary.info(
+            MarkupHelper.createLabel(table.toString(), null)
+        );
 
-		all.stream().filter(v -> !v.online)
-				.forEach(v -> offlineNode.fail(v.instance + " → " + v.vessel + " → " + v.reason));
-	}
+        ExtentTest offlineNode =
+            summary.createNode("❌ Offline Vessel Details");
+
+        all.stream()
+           .filter(v -> !v.online)
+           .forEach(v ->
+               offlineNode.fail(
+                   v.instance + " → " + v.vessel + " → " + v.reason
+               )
+           );
+    }
 }

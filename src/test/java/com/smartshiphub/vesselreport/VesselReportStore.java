@@ -5,14 +5,16 @@ import java.util.stream.Collectors;
 
 public class VesselReportStore {
 
-    private static final List<VesselStatus> DATA = new ArrayList<>();
+    /* ================= MODIFIED: Thread Safe List ================= */
+    private static final List<VesselStatus> DATA =
+            Collections.synchronizedList(new ArrayList<>());
 
-    public static synchronized void add(VesselStatus status) {
+    public static void add(VesselStatus status) {
         DATA.add(status);
     }
 
     public static List<VesselStatus> getAll() {
-        return DATA;
+        return new ArrayList<>(DATA); // defensive copy
     }
 
     public static Map<String, List<VesselStatus>> byInstance() {
