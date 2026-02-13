@@ -16,20 +16,31 @@ public class BaseTest {
 
     @BeforeMethod(alwaysRun = true)
     public void setup() {
+
         prop = ConfigReader.initProperties();
-        driver = DriverFactory.initDriver(prop.getProperty("browser"));
-        //driver.get(prop.getProperty("url"));
+
+        driver = DriverFactory.initDriver(
+                prop.getProperty("browser"));
+
+        /* ================= OPTIONAL DEFAULT URL ================= */
+        // driver.get(prop.getProperty("url"));
     }
 
     protected void launchApplication(String instance) {
-        String environment = System.getProperty("environment", "PROD");
-        String url = EnvironmentUtil.buildLoginUrl(environment, instance);
+
+        String environment =
+                System.getProperty("environment", "PROD");
+
+        String url =
+                EnvironmentUtil.buildLoginUrl(environment, instance);
+
         driver.get(url);
     }
 
-
     @AfterMethod(alwaysRun = true)
     public void tearDown() {
+
+        /* ================= SAFETY ADDED ================= */
         DriverFactory.quitDriver();
     }
 }
