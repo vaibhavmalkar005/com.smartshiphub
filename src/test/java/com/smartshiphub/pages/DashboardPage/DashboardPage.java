@@ -59,16 +59,16 @@ public class DashboardPage {
             
             Point loc = graph.getLocation();
             Dimension size = graph.getSize();
-
+        
             // Calculate far right point of graph for latest data
             int targetX = loc.getX() + size.getWidth() - 5;
             int targetY = loc.getY() + (size.getHeight() / 2);
-
+            
             js.executeScript(
                 "var e = new MouseEvent('mousemove', {clientX: arguments[0], clientY: arguments[1], bubbles: true});" +
                 "document.elementFromPoint(arguments[0], arguments[1]).dispatchEvent(e);", 
                 targetX, targetY
-            );
+            );           
 
             // Wait for tooltip to update with valid data
             return new WebDriverWait(driver, Duration.ofSeconds(4))
